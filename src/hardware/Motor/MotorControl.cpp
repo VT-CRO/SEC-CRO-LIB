@@ -23,56 +23,55 @@ MotorControl::MotorControl(int in1, int in2) {
 
   Assignments.in1 = in1;
   Assignments.in2 = in2;
-  speed = 0;
+  goal_velocity = 0;
   current_velocity = 0;
   goal_velocity = 0;
   pidMode = false;
   Motor_pin_init();
+  last_pidTime = millis();
 }
 
 void MotorControl::Motor_setPIDParams(float P, float I, float D) {
-  motorP = P;
-  motorI = I;
-  motorD = D;
+  pid = pidInit(P, I, D, 0, 0, 0, 0);
 }
-
-// void MotorControl::Motor_enablePIDTask() {
-//   (xTaskCreate(MotorControl::pid_task, "PID control task", 100, this,
-//                tskIDLE_PRIORITY + tskPID_PRIORITY, NULL) != pdTRUE);
-//   pidMode = false;
-// }
 
 // Motor Speed sets the speed of the motors.
 // Values go from 0 - 255 for analogWrite.
 //  I want to support negative values later
 //  to signify reverse.
-void MotorControl::Motor_start(int newSpeed) {
-  // double increment = .01;
-  // while (increment < 1)
-  // {
-  //     analogWrite(go_pin, increment * speed);
-  //     delay(1);
-  //     increment = increment + .01;
-  //     Serial.print(increment);
-  // }
+void MotorControl::Motor_setGoalSpeed(float newSpeed) {
+  goal_velocity = newSpeed;
+}
+
+void MotorControl::Motor_update() {
+  if (pidMode) {
+    Motor_pidControlLoop();
+  } else {
+    Motor_calcPWMFeedForward();
+  }
+
   int go_pin, no_go_pin;
 
-  if (newSpeed < 0) {
+  if (pwm < 0) {
     go_pin = Assignments.in2;
     no_go_pin = Assignments.in1;
   } else {
     go_pin = Assignments.in1;
     no_go_pin = Assignments.in2;
   }
-  speed = abs(newSpeed);
-  analogWrite(no_go_pin, 0);
-  analogWrite(go_pin, speed);
-}
 
-void MotorControl::logState(ros::NodeHandle &nh) {
-  char buff[32];
-  sprintf(buff, "Motor Speed: %d", speed);
-  nh.loginfo(buff);
+  // Apply rate limits for safety
+  unsigned long time = millis();
+  float dt = (time - last_updateTime) / 1000;
+
+  int pwmMaxLimit = (dt * 10) + lastPwm;   // Calculate max with rising slew rate
+  int pwmMinLimit = (dt * -10) + lastPwm;  // Calculate min with falling slew rate
+  pwm = constrain(pwm, pwmMinLimit, pwmMaxLimit);
+
+  analogWrite(no_go_pin, 0);
+  analogWrite(go_pin, abs(pwm));
+  
+  lastPwm = pwm;
 }
 
 // Motor_pin_init initalizates pins.
@@ -82,60 +81,29 @@ void MotorControl::Motor_pin_init() {
   pinMode(Assignments.in2, OUTPUT);
 }
 
-// void MotorControl::pid_task(void *pidParams) {
-//   MotorControl *instance = (MotorControl *)pidParams;
-
-//   TickType_t ui32WakeTime = xTaskGetTickCount();
-
-//   while (1) {
-//     instance->Motor_pidControlLoop();
-//     xTaskDelayUntil(&ui32WakeTime, pdMS_TO_TICKS(PID_LOOP_PERIOD));
-//   }
-// }
+void MotorControl::Motor_setPosition(int _position) { position = _position; }
 
 void MotorControl::Motor_pidControlLoop() {
 
-  float error_velocity = goal_velocity - current_velocity;
+  unsigned long newTime = millis();
+  float dt = newTime - last_pidTime;
 
-  float PG = error_velocity * motorP;                // Proptional Gain
-  float DG = (error_velocity - last_error) * motorD; // Differential Gain
+  // TODO: Might need to factor in wheel radius for rotational speed calculation
+  current_velocity = position - lastPositionTicks / dt;
+  lastPositionTicks = position;
 
-  last_error = error_velocity;
-  // need to be able to set velocity for next interation of the loop
-  // right now the only thing we have is set speed which ranges from 0-256 bytes
-  // figure out how that works. Probably need to deal with the encoder somewhere
-  // else in the codeDo
-  float controlSig = PG + DG;
+  float controlSig =
+      (int)pidCalculate(pid, goal_velocity, current_velocity, dt);
+  controlSig = constrain(controlSig, -255, 255);
 
-  // set speed with value control Sig and convert bounds
-  if (controlSig > 255) {
-    controlSig = 255.0;
-  } else if (controlSig < -255) {
-    controlSig = -255.0;
-  }
-
-  speed = (int)controlSig;
-
-  Motor_start(speed);
+  pwm = (int)controlSig;
 }
 
-// void MotorControl::Motor_stopMove()
-// {
-//     double increment = 0.01;
-//     while (increment > 0)
-//     {
-//         // alternatively I could just put the set speed function here
-//         // but then I would need to add argurments to the function
-//         analogWrite(go_pin, increment * speed);
-//         delay(1);
-//         increment = increment - .01;
-//         Serial.print(increment);
-//     }
-// }
+void MotorControl::Motor_calcPWMFeedForward() {
+  // TODO: Calculate PWM for goal_velocity
+  pwm = round(24.52 * goal_velocity - 0.172);
+}
 
-// void MotorControl::checkDirection(int newSpeed)
-// {
+int MotorControl::Motor_getSpeed() { return current_velocity; }
 
-// }
-
-int MotorControl::getSpeed() { return speed; }
+void MotorControl::Motor_enablePIDMode(bool enable) { pidMode = enable; }

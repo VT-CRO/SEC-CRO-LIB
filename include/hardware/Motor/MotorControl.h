@@ -1,22 +1,22 @@
 /**
  * @file MotorControl.h
- * @author Domenic Marcelli R&D Team 
+ * @author Domenic Marcelli R&D Team
  * @brief This the header file for the motor controls.
  * @date 2023-10-27
- * 
+ *
  * @copyright Copyright (c) 2024
- * 
+ *
  */
 
 #ifndef MOTORCONTROL_H_
 #define MOTORCONTROL_H_
-
 
 // #include "arduino_freertos.h"
 #include "Arduino.h"
 #include "ros.h"
 #include <avr/io.h>
 #include <avr/pgmspace.h>
+#include <util/PID.hpp>
 
 #define tskPID_PRIORITY 7 // can be changed. Up for discussion
 
@@ -28,10 +28,9 @@
 class MotorControl {
 
 public:
-
   /**
    * @brief Construct a new Motor Control object
-   * 
+   *
    * @param pin1 pin 1 of motor controller
    * @param pin2 pin 2 of motor controller
    */
@@ -39,7 +38,7 @@ public:
 
   /**
    * @brief Set up motor PID controller
-   * 
+   *
    * @param P Proportional gain
    * @param I Integral gain
    * @param D Derivative gain
@@ -47,72 +46,59 @@ public:
   void Motor_setPIDParams(float P, float I, float D);
 
   /**
-   * @brief Enabled motor speed control
-   */
-  void Motor_enablePIDTask();
-
-  /**
    * @brief Enables motors to begin running at a speed setpoint
-   * 
+   *
    * @param newSpeed Desired motor speed
    */
-  void Motor_start(int newSpeed);
+  void Motor_setGoalSpeed(float newSpeed);
+
+  void Motor_update();
 
   /**
    * @brief Initialize motor pins
-   * 
+   *
    */
   void Motor_pin_init();
-
-  // task for freeRTOS
-  static void pid_task(void *pidParams);
 
   /**
    * @brief Motor PID loop function
    */
   void Motor_pidControlLoop();
 
+  void Motor_calcPWMFeedForward();
+
+  void Motor_setPosition(int ticks);
+
   /**
    * @brief Get the motor speed
-   * 
+   *
    * @return motor speed as an int
    */
-  int getSpeed();
+  int Motor_getSpeed();
 
-  /**
-   * @brief Logs motor state to ROSSerial
-   * 
-   * @param nh The current ROS node handler
-   */
-  void logState(ros::NodeHandle &nh);
+  void Motor_enablePIDMode(bool enable);
 
 private:
-
   /**
    * @brief Boolean indicating if Motor is running PID control
    */
   bool pidMode;
 
   /**
-   * @brief Motor speed
+   * @brief Motor pwm
    */
-  int speed;
+  int pwm;
 
   /**
    * @brief Motor instantaneous angular velocity
-   * 
+   *
    */
-  int current_velocity;
+  float current_velocity;
 
   /**
    * @brief Target angular velocity
    */
-  int goal_velocity;
-
-  /**
-   * @brief Internal state variable for PID
-   */
-  int last_error;
+  float goal_velocity;
 
   /**
    * @brief Struct for holding motor pins
@@ -129,22 +115,17 @@ private:
   PinAssign Assignments;
 
   /**
-   * @brief Motor PID P Gain
-   * 
+   * @brief Motor PID
+   *
    */
-  int motorP;
+  PID pid;
 
-  /**
-   * @brief Motor PID I Gain
-   * 
-   */
-  int motorI;
+  unsigned long last_pidTime;
+  unsigned long last_updateTime;
 
-  /**
-   * @brief Motor PID D Gain
-   * 
-   */
-  int motorD;
+  int lastPositionTicks;
+  int position;
+  int lastPwm;
 };
 // All the variables needed to control the motors
 
