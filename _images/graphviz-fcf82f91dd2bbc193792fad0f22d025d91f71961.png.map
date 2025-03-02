@@ -1,0 +1,9 @@
+<map id="%3" name="%3">
+<area shape="rect" id="node1" title="/github/workspace/include/hardware/Motor/MotorControl.h" alt="" coords="5,101,592,149"/>
+<area shape="rect" id="node3" title="/github/workspace/src/hardware/Motor/MotorControl.cpp" alt="" coords="15,197,583,245"/>
+<area shape="poly" id="edge1" title="include" alt="" coords="301,163,301,197,296,197,296,163"/>
+<area shape="rect" id="node2" title="/github/workspace/include/util/PID.hpp" alt="" coords="349,5,741,53"/>
+<area shape="poly" id="edge2" title="include" alt="" coords="473,61,360,104,358,99,472,56"/>
+<area shape="rect" id="node4" title="/github/workspace/src/util/PID.cpp" alt="" coords="617,101,967,149"/>
+<area shape="poly" id="edge3" title="include" alt="" coords="619,56,733,99,731,104,617,61"/>
+</map>

@@ -1,5 +1,0 @@
-<map id="%3" name="%3">
-<area shape="rect" id="node1" title="Chassis_t" alt="" coords="25,5,137,53"/>
-<area shape="rect" id="node2" title="MotorControl" alt="" coords="5,101,156,149"/>
-<area shape="poly" id="edge1" title="usage" alt="" coords="83,54,83,88,78,88,78,54"/>
-</map>

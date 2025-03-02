@@ -1,5 +1,0 @@
-<map id="%3" name="%3">
-<area shape="rect" id="node1" title="/github/workspace/include/hardware/Chassis/Chassis.hpp" alt="" coords="5,5,575,53"/>
-<area shape="rect" id="node2" title="/github/workspace/src/hardware/Chassis/Chassis.cpp" alt="" coords="27,101,553,149"/>
-<area shape="poly" id="edge1" title="include" alt="" coords="293,67,293,101,287,101,287,67"/>
-</map>
