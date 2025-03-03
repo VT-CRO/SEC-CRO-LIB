@@ -20,7 +20,6 @@
 // Motor Control Constructor
 // Assigns values to the pin variables
 MotorControl::MotorControl(int in1, int in2) {
-
   Assignments.in1 = in1;
   Assignments.in2 = in2;
   goal_velocity = 0;
@@ -62,16 +61,17 @@ void MotorControl::Motor_update() {
 
   // Apply rate limits for safety
   unsigned long time = millis();
-  float dt = (time - last_updateTime) / 1000;
+  float dt = (time - last_updateTime) / 1000.0f;
 
-  int pwmMaxLimit = (dt * 10) + lastPwm;   // Calculate max with rising slew rate
-  int pwmMinLimit = (dt * -10) + lastPwm;  // Calculate min with falling slew rate
+  float pwmMaxLimit = (dt * 20) + lastPwm;   // Calculate max with rising slew rate
+  float pwmMinLimit = (dt * -20) + lastPwm;  // Calculate min with falling slew rate
   pwm = constrain(pwm, pwmMinLimit, pwmMaxLimit);
 
   analogWrite(no_go_pin, 0);
-  analogWrite(go_pin, abs(pwm));
+  analogWrite(go_pin, abs((int)pwm));
   
   lastPwm = pwm;
+  last_updateTime = millis();
 }
 
 // Motor_pin_init initalizates pins.
