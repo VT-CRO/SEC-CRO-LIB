@@ -121,9 +121,11 @@ private:
   PID pid;
 
   unsigned long last_pidTime;
+  unsigned long last_updateTime;
 
   int lastPositionTicks;
   int position;
+  int lastPwm;
 };
 // All the variables needed to control the motors
 

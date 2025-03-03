@@ -59,8 +59,19 @@ void MotorControl::Motor_update() {
     go_pin = Assignments.in1;
     no_go_pin = Assignments.in2;
   }
+
+  // Apply rate limits for safety
+  unsigned long time = millis();
+  float dt = (time - last_updateTime) / 1000;
+
+  int pwmMaxLimit = (dt * 10) + lastPwm;   // Calculate max with rising slew rate
+  int pwmMinLimit = (dt * -10) + lastPwm;  // Calculate min with falling slew rate
+  pwm = constrain(pwm, pwmMinLimit, pwmMaxLimit);
+
   analogWrite(no_go_pin, 0);
   analogWrite(go_pin, abs(pwm));
+  
+  lastPwm = pwm;
 }
 
 // Motor_pin_init initalizates pins.
